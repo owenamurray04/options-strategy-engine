@@ -135,3 +135,10 @@ Three independent JS modules inside one IIFE: the stepper, the prediction canvas
 
 Educational / paper-only. No brokerage connection, no order placement, no real money. Free
 delayed data only. No GPU/"universal solver" — a templated, vectorized CPU search is plenty.
+
+## Source documents (in `docs/`)
+
+- `docs/DECISIONS.md` — full decisions log + rationale + what changed from the originals.
+- `docs/the-big-idea.md` — the original concept pitch (reformatted).
+- `docs/the-engine-logic.md` — the original engineering draft (reformatted; note: its
+  brute-force/GPU approach was superseded — see DECISIONS.md).

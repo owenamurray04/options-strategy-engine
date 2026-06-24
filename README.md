@@ -43,6 +43,13 @@ That's it.
 3. **Validation** — tune the objective against expert judgment.
 4. Portfolio-aware mode, presets vs. advanced dials, naming/identity.
 
+## Docs
+
+- [`docs/DECISIONS.md`](docs/DECISIONS.md) — every design decision we made and why (start here).
+- [`docs/the-big-idea.md`](docs/the-big-idea.md) — the original concept pitch.
+- [`docs/the-engine-logic.md`](docs/the-engine-logic.md) — the original engineering draft.
+- [`CLAUDE.md`](CLAUDE.md) — condensed context for an AI assistant working in this repo.
+
 ## Disclaimer
 
 Educational and informational only. **Not financial advice.** All figures in the current
