@@ -10,9 +10,24 @@ plain-English market view; the engine returns a small set of ranked, risk-manage
 strategies that express it. The differentiator vs. competitors (OptionStrat, etc.): they
 make you choose the strategy first; we choose it for you from your belief.
 
-The whole product currently lives in one file: **`index.html`** (vanilla HTML/CSS/JS, no
-build step, no dependencies, opens directly in a browser). Inter is loaded from Google Fonts
-with a system-font fallback.
+The product is **vanilla HTML/CSS/JS with no build step and no dependencies**, now split
+across a few files (the old "one file" rule was self-imposed and dropped 2026-06-24 at Owen's
+call). Layout:
+
+- `index.html` — markup + the step scaffolding only.
+- `styles.css` — all styling.
+- `js/data.js` — the real `MKT` option-chain snapshot + `STRATS` templates (the data seam).
+- `js/engine.js` — pure math: build strategies, integrate payoff vs. the view distribution,
+  rank; plus `payoffSVG`/`money` helpers. No DOM.
+- `js/canvas.js` — the prediction cloud (state + render + interaction); exposes `getView()`
+  for the engine and `applyStance()` / `setActiveExp()` for the stepper.
+- `js/stepper.js` — the 3-step flow, Simple/Advanced, expiration selector, results rendering.
+- `js/main.js` — bootstrap that wires it together.
+
+**Now uses ES modules** (`<script type="module">`), so it **must be served** (GitHub Pages or
+the local preview both do); double-clicking the file from Finder no longer works. Inter is
+loaded from Google Fonts with a system-font fallback. A local static preview is configured in
+`.claude/launch.json` (`python3 -m http.server`).
 
 ## Who it's for (audience is a spectrum → progressive disclosure)
 
@@ -33,13 +48,33 @@ with a system-font fallback.
 
 What's real vs. placeholder:
 - ✅ The distribution model, the payoff integration, and the ranking are real and reactive.
-- ⚠️ Strikes, premiums, and Greeks are **hardcoded illustrative TSLA values**. There is **no
-  live option-chain data** yet, so dollar figures are representative, not tradeable. This is
-  the single biggest gap between the prototype and something true.
+- ✅ **Strikes, premiums, IV and Greeks are now a REAL TSLA option-chain snapshot**
+  (captured 2026-06-24 ~close, spot $375.39) across **three expirations** (Jul 17 / Aug 21 /
+  Sep 18), pulled live via the market-data MCP. Lives in one `MKT` object in `index.html` —
+  the single data seam. Each contract is `[mark, delta, theta, vega, IV]`. Strategies are
+  built leg-by-leg from these (payoff, capital-at-risk, and net Greeks all derive from the
+  same legs + real premiums — nothing hardcoded). An **expiration selector** in Step 3
+  re-prices and re-ranks live, and the chosen expiry is drawn as a marker on the prediction
+  chart. The price axis was rescaled to real spot (`price(v)=255+v*250`).
+- ✅ **The cloud's spread is now calibrated.** Locked meaning: **the point you pull to = 1σ**,
+  so `[mode − 1σ_down, mode + 1σ_up]` is the **68%** band and `±2σ` is the **95%** band (a
+  two-piece/split normal contains exactly 68.3% / 95.4% in those intervals regardless of skew).
+  Rendered as an **error bar at the selected expiration** (thin 95% whisker + thick 68% core +
+  mode dot, labeled), plus "68% range" / "95% range" chips and a plain-English readout. Crucial
+  property: the displayed bands use the **same σ the engine integrates** (`getView()` →
+  `priceDist`), so what you see *is* what it ranks against — probabilities are now honest.
+- ⚠️ Still a **static snapshot**, not a live stream (fits the educational/paper-only scope).
+  Refreshing means re-pulling the chain and replacing `MKT`. `chance_of_profit` (market-implied
+  PoP) is in the snapshot source but not yet wired in — it's the raw material for the
+  edge-vs-market factor (next big step).
 
-## Architecture of `index.html`
+## Architecture
 
-Three independent JS modules inside one IIFE: the stepper, the prediction canvas, the engine.
+Three independent ES modules + a data module (see file layout above): the stepper
+(`js/stepper.js`), the prediction canvas (`js/canvas.js`), the engine (`js/engine.js`), and the
+data seam (`js/data.js`). They share no globals — only explicit imports/exports. The canvas
+hands the engine a plain view object via `getView()`; the stepper owns which expiration is
+active and drives both.
 
 ### Prediction canvas (the heart of the product)
 - Rendered as a **smooth 2D Gaussian density heatmap** — a probability *cloud* that lightly
@@ -102,8 +137,9 @@ Three independent JS modules inside one IIFE: the stepper, the prediction canvas
 
 - **Data + licensing** is the real cost and the current biggest gap (OPRA fees for real-time;
   use delayed/free yfinance or Tradier sandbox to start).
-- **Calibration**: what does the cloud's spread mean — 1σ? a 68%/95% band? Undecided. This
-  makes every downstream number honest; do it before claiming real probabilities.
+- **Calibration**: ✅ RESOLVED — the pulled edge = 1σ, rendered as 68%/95% bands that match the
+  engine's own σ. Open refinement: the σ is still the user's *subjective* width; we don't yet
+  compare it to the market-implied σ (from IV) — that comparison is the edge-vs-market factor.
 - **Regulation**: ranked, personalized trade recommendations can be construed as investment
   advice (potential RIA/FINRA exposure). Keep it educational/paper-only; get real securities
   counsel before anything live or money-connected. No brokerage connection in scope.
@@ -112,11 +148,16 @@ Three independent JS modules inside one IIFE: the stepper, the prediction canvas
 
 ## Roadmap / good next steps
 
-1. **Real option-chain data** (yfinance / Tradier sandbox) so strikes/premiums/IV are real.
-2. **Calibrate** the spread → render 68%/95% bands.
+1. ✅ **DONE (snapshot):** real TSLA option-chain data (3 expirations) is embedded as `MKT`;
+   strikes/premiums/IV/Greeks are real. Remaining: make it refreshable / multi-ticker, and
+   eventually a live feed (OPRA fees for real-time; delayed/free for now).
+2. ✅ **DONE:** calibrated the spread → pulled edge = 1σ, rendered as 68%/95% bands (error bar
+   at the expiration + range chips), using the same σ the engine integrates. Probabilities now
+   honest. Remaining refinement: overlay the **market-implied σ** (from IV) for comparison.
 3. **Validation pass** — generate scenarios + the engine's top picks; Owen critiques; tune
    defaults (`λ`, factor weights). Owen is the ideal validator (hedge-fund domain expert).
-4. Wire the **edge-vs-market** factor and the **Advanced** factor dials into `index.html`.
+4. Wire the **edge-vs-market** factor (market-implied PoP/σ vs. the user's view) and the
+   **Advanced** factor dials into the UI. This is the natural next big step.
 5. Naming / visual identity (currently placeholder "Thesis", logo is a "◆").
 
 ## How to work with Owen (important)
