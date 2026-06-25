@@ -15,29 +15,24 @@
     <div style="display:flex;gap:6px"><button class="seg on" id="segS">Simple</button><button class="seg" id="segA">Advanced</button></div>
   </div>
   <div class="steps">
-    <button class="dot on" data-go="1"><span class="n">1</span> Your view</button>
-    <button class="dot" data-go="2"><span class="n">2</span> Your prediction</button>
-    <button class="dot" data-go="3"><span class="n">3</span> Strategies</button>
+    <button class="dot on" data-go="1"><span class="n">1</span> Pick stock</button>
+    <button class="dot" data-go="2"><span class="n">2</span> Predict &amp; strategies</button>
   </div>
   <div class="stage">
 
     <section class="step" data-step="1">
-      <p class="eyebrow">Step 1 of 3 · your view</p>
-      <h3>What's your big idea?</h3>
-      <p class="sub">Pick the statement that matches your gut. No jargon required.</p>
-      <div class="grid">
-        <button class="stance sel" data-stance="up"><span class="ic" style="color:var(--tsuccess)">↗</span><span><b>It'll go up</b><span class="muted" style="font-size:13px">I think the price rises</span></span></button>
-        <button class="stance" data-stance="down"><span class="ic" style="color:var(--tdanger)">↘</span><span><b>It'll go down</b><span class="muted" style="font-size:13px">I think the price falls</span></span></button>
-        <button class="stance" data-stance="flat"><span class="ic" style="color:var(--t2)">↔</span><span><b>It'll stay flat</b><span class="muted" style="font-size:13px">Chops sideways in a range</span></span></button>
-        <button class="stance" data-stance="pair"><span class="ic" style="color:var(--t2)">⚖</span><span><b>One beats another</b><span class="muted" style="font-size:13px">Stock A outperforms stock B</span></span></button>
-      </div>
+      <p class="eyebrow">Step 1 of 2 · pick a stock</p>
+      <h3>Which stock?</h3>
+      <p class="sub">Search a ticker — we pull its live option chain. Then just draw what you think happens.</p>
+      <input id="search" class="search" type="text" placeholder="Search ticker or company…  e.g. TSLA" autocomplete="off">
+      <div id="searchResults" class="sresults"></div>
     </section>
 
     <section class="step" data-step="2" style="display:none">
-      <p class="eyebrow">Step 2 of 3 · your prediction</p>
+      <p class="eyebrow">Step 2 of 2 · predict &amp; strategies</p>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px">
         <h3 style="margin:0">Draw your prediction</h3>
-        <button class="pill">🔍 TSLA · Tesla <span class="muted" id="hdrPrice">$375.39</span> ▾</button>
+        <button class="pill" id="stockPill" title="Change stock">🔍 — ▾</button>
       </div>
       <div style="display:flex;align-items:center;gap:10px;margin:0 0 10px">
         <p id="hint" class="muted" style="flex:1;margin:0;font-size:13px">✋ Drag the dot to set your most-likely point. Grab anywhere else and pull to spread — pull one side further for skew.</p>
@@ -52,19 +47,16 @@
         <div class="chip"><p class="lab">Date band</p><p class="val" id="cDt">—</p></div>
       </div>
       <p class="muted" style="font-size:13px;margin:10px 0 0" id="cImp">—</p>
-    </section>
 
-    <section class="step" data-step="3" style="display:none">
-      <p class="eyebrow">Step 3 of 3 · strategies</p>
-      <h3>Your top strategies</h3>
-      <p class="sub">Computed from the prediction you drew — ranked by reward against worst-case risk, per dollar.</p>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px">
+      <div class="wsplit"></div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:16px 0 10px">
         <span class="tiny">Expires</span>
         <button class="seg" data-exp="jul">Jul 17 · 23d</button>
         <button class="seg on" data-exp="aug">Aug 21 · 58d</button>
         <button class="seg" data-exp="sep">Sep 18 · 86d</button>
-        <span class="tiny" id="chainTag" style="margin-left:auto">Live chain · TSLA $375.39 · Jun 24</span>
+        <span class="tiny" id="chainTag" style="margin-left:auto">—</span>
       </div>
+      <p class="sub" style="margin:0 0 12px">Ranked <b>live</b> as you draw — reward against worst-case risk, per dollar.</p>
       <div id="results"></div>
     </section>
 
@@ -72,7 +64,7 @@
   <div class="foot">
     <button class="btn" id="back" style="visibility:hidden">← Back</button>
     <span class="disc">Educational tool — not financial advice</span>
-    <button class="btn pri" id="next">Next →</button>
+    <button class="btn pri" id="next" style="visibility:hidden">Start over</button>
   </div>
 </div>
 

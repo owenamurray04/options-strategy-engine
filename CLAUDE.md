@@ -16,18 +16,24 @@ call). Layout:
 
 - `index.html` — markup + the step scaffolding only.
 - `styles.css` — all styling.
-- `js/data.js` — the real `MKT` option-chain snapshot + `STRATS` templates (the data seam).
-- `js/engine.js` — pure math: build strategies, integrate payoff vs. the view distribution,
-  rank; plus `payoffSVG`/`money` helpers. No DOM.
-- `js/canvas.js` — the prediction cloud (state + render + interaction); exposes `getView()`
-  for the engine and `applyStance()` / `setActiveExp()` for the stepper.
-- `js/stepper.js` — the 3-step flow, Simple/Advanced, expiration selector, results rendering.
+- `js/data.js` — the **`STOCKS` registry** (real per-ticker option-chain snapshots; TSLA is
+  real today) + spot-relative `STRATS` templates + `searchSymbols()`/`getChain()`. This is the
+  data seam: in production these two functions become async calls to the data backend.
+- `js/engine.js` — pure math: resolve spot-relative strikes → build strategies, integrate
+  payoff vs. the view distribution, rank; plus `payoffSVG`/`money` helpers. No DOM.
+- `js/canvas.js` — the prediction cloud (state + render + interaction); price axis re-centers
+  per stock. Exposes `getView()` for the engine, `setChain()`/`setActiveExp()` to point at a
+  ticker+expiry, and `setOnChange()` so the stepper can re-rank **live while dragging**.
+- `js/stepper.js` — the 2-step flow (search → workspace), Simple/Advanced, expiration
+  selector, live results rendering.
 - `js/main.js` — bootstrap that wires it together.
 
 **Now uses ES modules** (`<script type="module">`), so it **must be served** (GitHub Pages or
 the local preview both do); double-clicking the file from Finder no longer works. Inter is
-loaded from Google Fonts with a system-font fallback. A local static preview is configured in
-`.claude/launch.json` (`python3 -m http.server`).
+loaded from Google Fonts with a system-font fallback. Local preview is configured in
+`.claude/launch.json` and runs `.claude/devserver.py` — a **no-cache** static server (plain
+`http.server` made browsers serve stale ES modules after edits; that wasted real debugging
+time). Production cache-busting for returning visitors is still an open follow-up (no build step).
 
 ## Who it's for (audience is a spectrum → progressive disclosure)
 
@@ -39,12 +45,15 @@ loaded from Google Fonts with a system-font fallback. A local static preview is 
 
 ## Current state
 
-`index.html` assembles the full 3-step flow:
+The app is a **2-step flow** (Owen cut the stance pickers 2026-06-25 — "if I draw it going up,
+that IS up"; the only upfront choice is the ticker):
 
-1. **Your view** — four plain-English stances (up / down / flat / pairs). Picking one
-   pre-positions the prediction cloud.
-2. **Your prediction** — the prediction canvas (see architecture below).
-3. **Strategies** — ranked **live** from the drawn distribution.
+1. **Pick stock** — a **search box** (`searchSymbols()`); selecting a result loads its chain
+   and re-centers the chart on its spot.
+2. **Predict & strategies** — ONE merged workspace: the prediction canvas on top, and the
+   ranked strategies below that **reorder live as you drag** the cloud. Strategies are
+   spot-relative (ATM, ±8%, …) resolved to the nearest real listed strike, so the library
+   works on any ticker.
 
 What's real vs. placeholder:
 - ✅ The distribution model, the payoff integration, and the ranking are real and reactive.
@@ -154,11 +163,22 @@ active and drives both.
 2. ✅ **DONE:** calibrated the spread → pulled edge = 1σ, rendered as 68%/95% bands (error bar
    at the expiration + range chips), using the same σ the engine integrates. Probabilities now
    honest. Remaining refinement: overlay the **market-implied σ** (from IV) for comparison.
-3. **Validation pass** — generate scenarios + the engine's top picks; Owen critiques; tune
-   defaults (`λ`, factor weights). Owen is the ideal validator (hedge-fund domain expert).
-4. Wire the **edge-vs-market** factor (market-implied PoP/σ vs. the user's view) and the
-   **Advanced** factor dials into the UI. This is the natural next big step.
-5. Naming / visual identity (currently placeholder "Thesis", logo is a "◆").
+3. 🔜 **ACTIVE — production data backend (any-ticker live data).** Owen relaxed the
+   free/no-backend guardrail (2026-06-25): he wants something that **scales into a profitable
+   production app**. Plan: a small serverless service (Vercel/Cloudflare free tier) that holds
+   a provider key, fetches chains for any ticker, **caches** (cost control = profitability),
+   and serves the app clean JSON via `searchSymbols()`/`getChain()`. Recommended provider:
+   **Tradier** (chains WITH Greeks/IV in one call; free delayed sandbox; ~$10/mo real-time;
+   brokerage-execution upgrade path). Polygon.io is the alt. Verified in-browser that direct
+   feed calls are CORS-blocked and public proxies are flaky → our own proxy is correct.
+   **BLOCKED ON OWEN: needs a provider account + API key.** UI/engine are already ticker-ready.
+4. ✅ **DONE:** removed stance pickers → stock search; merged into one workspace with **live
+   reordering as you drag**; generalized the engine to spot-relative strikes + per-stock axis.
+5. **Validation pass** — scenarios + the engine's top picks; Owen critiques; tune defaults
+   (`λ`, factor weights). Owen is the ideal validator (hedge-fund domain expert).
+6. Wire the **edge-vs-market** factor (market-implied PoP/σ vs. the user's view) and the
+   **Advanced** factor dials into the UI.
+7. Production ES-module **cache-busting** for returning visitors; naming / visual identity.
 
 ## How to work with Owen (important)
 
@@ -174,8 +194,12 @@ active and drives both.
 
 ## Scope guardrails (decided)
 
-Educational / paper-only. No brokerage connection, no order placement, no real money. Free
-delayed data only. No GPU/"universal solver" — a templated, vectorized CPU search is plenty.
+Educational / paper-only **for now** — no order placement / no real money yet. **UPDATE
+2026-06-25:** the "100% free, no backend, free-delayed-only" guardrail is **lifted** — Owen
+wants a path to a **profitable production app**, so a real data backend + paid data tiers +
+(eventually) brokerage execution are in scope; build accordingly (cache, keys server-side,
+scalable serverless). Still: get securities counsel before anything money-connected. No
+GPU/"universal solver" — a templated, vectorized CPU search is plenty.
 
 ## Source documents (in `docs/`)
 

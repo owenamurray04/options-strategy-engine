@@ -4,7 +4,7 @@
     {
       "name": "thesis",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "4178"],
+      "runtimeArgs": [".claude/devserver.py"],
       "port": 4178
     }
   ]
